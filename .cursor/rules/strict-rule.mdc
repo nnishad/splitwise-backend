@@ -1,0 +1,176 @@
+---
+alwaysApply: true
+## Project Mandate
+
+- Think and execute like a top 0.1% engineer: enterprise, scalable, robust.
+- Every requirement is *critical* — no partial features, no silent guesswork.
+- For **every feature/change**: treat API, DB, business logic, validation, error handling, edge cases, testing, and security as *first-class* design aspects.
+- All engineering work is end-to-end: from requirements clarification through code, DB schema, tests, and documentation.
+- Treat every ambiguity as a blocker until clarified with the product/tech lead.
+
+---
+
+## 🟩 Feature/Change Process (Follow *for every new or updated feature*)
+
+### 1. Requirements Gathering
+
+- **Never assume, always clarify.**
+    - For each user story/feature:  
+      - List **all open questions** for clarification — _never guess or fill in blanks silently_.
+      - Examples:
+        - Who can access this endpoint? (AuthN/Z)
+        - What are failure/edge scenarios?
+        - What are non-functional requirements? (perf, SLAs)
+        - Data validation rules?
+        - Is this operation idempotent?
+        - How does this feature scale?
+    - Document all clarifications received.
+
+---
+
+### 2. Design (E2E)
+
+#### API Layer (Fastify)
+- List all new/updated endpoints, method(s), URL patterns.
+- Request/response schemas (with explicit types).
+- Authentication/Authorization requirements.
+- Input validation rules.
+- Error and edge case responses.
+
+#### Database Layer (Prisma + Postgres)
+- List **all tables/entities** to be created or updated.
+- Define table schema (name, columns, types, constraints, indexes, relations, unique keys, foreign keys).
+- Migration plan (forward and rollback).
+- Data integrity and consistency rules.
+- Clarify data lifecycle (creation, update, deletion, archival).
+
+#### Business Logic Layer (TypeScript)
+- List new/updated service modules/classes/functions.
+- Clarify state transitions, domain logic, and critical flows.
+- Document side effects (e.g., emails, 3rd-party calls).
+
+#### Security
+- List potential threats/vulnerabilities for this feature.
+- Confirm mitigations (input validation, auth, rate limiting, audit logs).
+
+#### Testing
+- List new/updated unit, integration, and end-to-end tests.
+- Explicitly cover success, failure, edge, and abuse cases.
+
+#### Documentation
+- API docs, database ERDs, sequence diagrams as needed.
+- Update onboarding/readme if process changes.
+
+---
+
+### 3. Implementation Plan
+
+- List **ALL** files/code/modules to be created or updated.
+    - APIs (routes, controllers, DTOs)
+    - DB (Prisma schema, migrations)
+    - Services (business logic)
+    - Utils/helpers
+    - Types/interfaces
+    - Tests (unit, integration, e2e)
+    - Docs
+
+- Sequence steps for safe, atomic delivery (backward/forward compat, feature flags if needed).
+
+---
+
+### 4. Review Checklist
+
+- Requirements fully clarified?
+- DB schema reviewed by DB engineer?
+- API reviewed for security/consistency?
+- Tests for all relevant scenarios (not just “happy path”)?
+- Rollback/forward migration tested?
+- API and DB docs updated?
+- Performance implications reviewed?
+
+---
+
+## 🚩 Golden Rules (Do NOT break these)
+
+- **No requirement is “obvious”** — ask questions, clarify everything.
+- **No guessing**: Gaps are blockers, escalate and document.
+- **No hidden changes**: All code/db/test/doc changes are listed up front.
+- **No incomplete tests**: All possible paths (including edge/failure) are covered.
+- **No silent DB migrations**: All schema changes reviewed by at least one DB engineer.
+- **No untracked side effects**: All 3rd-party integrations and state changes are declared and tested.
+- **No regressions**: Existing features must not break.
+- **No pushing to main without peer review**.
+
+---
+
+## 📋 Template for Any New Feature/Change
+
+> **Copy & fill for every new task!**
+
+## Feature/Change: [Name/ID]
+
+### Requirements
+- [List requirements]
+
+#### Open Questions
+- [List all open questions here. **Do NOT proceed until all clarified**]
+
+---
+
+### Design
+
+#### API
+- **Endpoint(s):**
+- **Methods:**
+- **AuthZ/N:** (Authentication/Authorization)
+- **Request/Response Schemas:**
+- **Input Validation:**
+- **Edge/Error Cases:**
+
+#### Database
+- **Tables/Entities to Create/Update:**
+- **Columns, Types, Constraints:**
+- **Migration Plan:**
+- **Data Integrity Rules:**
+- **Relationships/Indexes:**
+
+#### Business Logic
+- **Service Functions/Modules:**
+- **Side Effects:**
+
+#### Security
+- **Threats/Vulnerabilities:**
+- **Mitigations:**
+
+#### Testing
+- **Unit:**
+- **Integration:**
+- **E2E:**
+- **Edge/Failure Cases:**
+
+#### Docs
+- **API:**
+- **DB:**
+- **Readme/Onboarding:**
+
+---
+
+### Implementation Plan
+- **Files/Code to Add/Update:**
+- **Migrations:**
+- **Tests:**
+- **Docs:**
+
+---
+
+### Review
+- **DB Review:** [yes/no]
+- **API/Security Review:** [yes/no]
+- **Test Coverage:** [yes/no]
+- **Docs Updated:** [yes/no]
+
+
+---
+
+**Stick to this process ruthlessly. Excellence is discipline, not luck.**
+---
