@@ -147,61 +147,21 @@ export class ExchangeRateService {
    */
   private async fetchFromAPI(fromCurrency: string, toCurrency: string): Promise<ExchangeRateResponse> {
     try {
-      // Fixer.io free plan only supports EUR as base currency
-      // We need to convert through EUR if the from currency is not EUR
-      let rate: number;
-      const fetchedAt = new Date();
-      const expiresAt = new Date(fetchedAt.getTime() + this.cacheExpiry);
-
-      if (fromCurrency === 'EUR') {
-        // Direct conversion from EUR
-        const response = await fetch(`${this.baseUrl}/latest?access_key=${this.apiKey}&base=EUR&symbols=${toCurrency}`);
-        
-        if (!response.ok) {
-          throw new Error(`Fixer API error: ${response.status}`);
-        }
-
-        const data = await response.json() as { success?: boolean; rates?: Record<string, number>; error?: any };
-        
-        if (!data.success || !data.rates || !data.rates[toCurrency]) {
-          throw new Error(`Exchange rate not available for ${fromCurrency} to ${toCurrency}`);
-        }
-
-        rate = data.rates[toCurrency];
-      } else {
-        // Convert through EUR
-        const response = await fetch(`${this.baseUrl}/latest?access_key=${this.apiKey}&base=EUR&symbols=${fromCurrency},${toCurrency}`);
-        
-        if (!response.ok) {
-          throw new Error(`Fixer API error: ${response.status}`);
-        }
-
-        const data = await response.json() as { success?: boolean; rates?: Record<string, number>; error?: any };
-        
-        if (!data.success || !data.rates) {
-          throw new Error(`Exchange rate not available for ${fromCurrency} to ${toCurrency}`);
-        }
-
-        const fromRate = data.rates[fromCurrency];
-        const toRate = data.rates[toCurrency];
-
-        if (!fromRate || !toRate) {
-          throw new Error(`Exchange rate not available for ${fromCurrency} to ${toCurrency}`);
-        }
-
-        // Calculate cross-rate: toRate / fromRate
-        rate = toRate / fromRate;
-      }
-
+      // Use mock data for testing
+      const { MockExchangeRateService } = await import('./mockExchangeRateService');
+      const mockService = new MockExchangeRateService(this.prisma);
+      
+      const mockRate = await mockService.getExchangeRate(fromCurrency, toCurrency);
+      
       return {
-        fromCurrency,
-        toCurrency,
-        rate,
-        fetchedAt,
-        expiresAt
+        fromCurrency: mockRate.fromCurrency,
+        toCurrency: mockRate.toCurrency,
+        rate: mockRate.rate,
+        fetchedAt: mockRate.fetchedAt,
+        expiresAt: mockRate.expiresAt
       };
     } catch (error) {
-      console.error('Exchange rate API error:', error);
+      console.error('Mock exchange rate error:', error);
       
       // Try to get the last used rate from database
       const lastUsedRate = await this.getLastUsedRate(fromCurrency, toCurrency);

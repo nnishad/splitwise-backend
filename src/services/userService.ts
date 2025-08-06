@@ -14,7 +14,6 @@ export class UserService {
         data: {
           email: userData.email,
           name: userData.name,
-          password: '', // This method is not used anymore, registration is handled by AuthService
         },
       });
 

@@ -3,13 +3,10 @@ import { Decimal } from '@prisma/client/runtime/library';
 import bcrypt from 'bcrypt';
 
 export async function createTestUser(prisma: PrismaClient, email?: string, name?: string) {
-  const hashedPassword = await bcrypt.hash('password123', 12);
-  
   return await prisma.user.create({
     data: {
       email: email || `test-${Date.now()}@example.com`,
       name: name || 'Test User',
-      password: hashedPassword,
       preferredCurrency: 'USD'
     }
   });

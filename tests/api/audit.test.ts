@@ -18,7 +18,7 @@ describe('Audit API', () => {
       data: {
         email: 'audit-test@example.com',
         name: 'Audit Test User',
-        password: 'hashedpassword'
+        
       }
     });
 

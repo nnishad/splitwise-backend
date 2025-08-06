@@ -58,17 +58,13 @@ A comprehensive expense splitting API built with Fastify, Prisma, and PostgreSQL
    cd splitwise-backend
    ```
 
-2. **Install dependencies**
+2. **Run the setup script**
    ```bash
-   npm install
+   npm run setup
    ```
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Configure the following variables in `.env`:
+3. **Configure your database**
+   Update the `.env` file with your PostgreSQL connection:
    ```env
    DATABASE_URL="postgresql://username:password@localhost:5432/splitwise_db"
    JWT_SECRET="your-jwt-secret"
@@ -76,9 +72,9 @@ A comprehensive expense splitting API built with Fastify, Prisma, and PostgreSQL
    EXCHANGE_RATE_API_URL="https://api.exchangerate-api.com/v4/latest"
    ```
 
-4. **Set up the database**
+4. **Create database tables**
    ```bash
-   npm run setup
+   npm run db:push
    ```
 
 5. **Start the development server**
@@ -87,6 +83,8 @@ A comprehensive expense splitting API built with Fastify, Prisma, and PostgreSQL
    ```
 
 The API will be available at `http://localhost:3000`
+
+> 📖 **For detailed setup instructions, see [docs/FRESH_START.md](docs/FRESH_START.md)**
 
 ## 📚 API Documentation
 
@@ -278,9 +276,9 @@ npm test -- --testPathPattern=exchangeRateService
 | `npm run build` | Build for production |
 | `npm start` | Start production server |
 | `npm test` | Run test suite |
-| `npm run setup` | Set up database and run migrations |
+| `npm run setup` | Set up database and create tables |
 | `npm run db:generate` | Generate Prisma client |
-| `npm run db:migrate` | Run database migrations |
+| `npm run db:push` | Push schema to database |
 | `npm run db:studio` | Open Prisma Studio |
 
 ## 🔒 Security Features

@@ -81,7 +81,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user1@test.com',
           name: 'User 1',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -89,7 +89,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user2@test.com',
           name: 'User 2',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -136,7 +136,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user@test.com',
           name: 'User',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -153,7 +153,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user1@test.com',
           name: 'User 1',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -161,7 +161,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user2@test.com',
           name: 'User 2',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -212,7 +212,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user1@test.com',
           name: 'User 1',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -220,7 +220,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user2@test.com',
           name: 'User 2',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -267,7 +267,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user1@test.com',
           name: 'User 1',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -275,7 +275,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user2@test.com',
           name: 'User 2',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -322,7 +322,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user1@test.com',
           name: 'User 1',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -330,7 +330,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user2@test.com',
           name: 'User 2',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -375,7 +375,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user1@test.com',
           name: 'User 1',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -383,7 +383,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user2@test.com',
           name: 'User 2',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -443,7 +443,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user1@test.com',
           name: 'User 1',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -451,7 +451,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user2@test.com',
           name: 'User 2',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -495,7 +495,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user1@test.com',
           name: 'User 1',
-          password: 'hashedpassword'
+          
         }
       });
 
@@ -503,7 +503,7 @@ describe('SettlementService', () => {
         data: {
           email: 'user2@test.com',
           name: 'User 2',
-          password: 'hashedpassword'
+          
         }
       });
 

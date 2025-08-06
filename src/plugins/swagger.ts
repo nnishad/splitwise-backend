@@ -15,6 +15,19 @@ const swaggerPlugin: FastifyPluginAsync = async (fastify) => {
       schemes: ['http'],
       consumes: ['application/json'],
       produces: ['application/json'],
+      securityDefinitions: {
+        BearerAuth: {
+          type: 'apiKey',
+          name: 'Authorization',
+          in: 'header',
+          description: 'Enter your Supabase access token in the format: Bearer <token>'
+        }
+      },
+      security: [
+        {
+          BearerAuth: []
+        }
+      ],
       tags: [
         { name: 'auth', description: 'Authentication routes' },
         { name: 'users', description: 'User management routes' },

@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ExchangeRateService } from '../services/exchangeRateService';
-import { authenticateToken } from '../middleware/auth';
-import { JWTPayload } from '../utils/auth';
+import { authenticateSupabaseToken } from '../middleware/supabaseAuth';
+
 import { 
   exchangeRateSchema,
   ExchangeRateRequest,
@@ -10,7 +10,13 @@ import {
 } from '../types/expense';
 
 interface AuthenticatedRequest extends FastifyRequest {
-  user: JWTPayload;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+    preferredCurrency: string;
+  };
 }
 
 export default async function exchangeRateRoutes(fastify: FastifyInstance) {
@@ -42,7 +48,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -110,7 +116,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -164,7 +170,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -241,7 +247,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -269,7 +275,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
 
       // Check if user is group owner or admin
       const userMembership = expense.group.members.find(
-        member => member.userId === authenticatedRequest.user.userId
+        member => member.userId === authenticatedRequest.user.id
       );
 
       if (!userMembership || (userMembership.role !== 'OWNER' && userMembership.role !== 'ADMIN')) {
@@ -295,7 +301,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         data: {
           expenseId: id,
           action: 'EXCHANGE_RATE_OVERRIDE',
-          userId: authenticatedRequest.user.userId,
+          userId: authenticatedRequest.user.id,
           oldData: { exchangeRate: expense.exchangeRate },
           newData: { exchangeRate }
         }
@@ -330,7 +336,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;

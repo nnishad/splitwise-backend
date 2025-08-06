@@ -3,7 +3,7 @@ import { FastifySchema } from 'fastify';
 export const registerSchema: FastifySchema = {
   body: {
     type: 'object',
-    required: ['email', 'name', 'password'],
+    required: ['email', 'name'],
     properties: {
       email: {
         type: 'string',
@@ -14,10 +14,6 @@ export const registerSchema: FastifySchema = {
         type: 'string',
         minLength: 1,
         maxLength: 100
-      },
-      password: {
-        type: 'string',
-        minLength: 8
       }
     }
   },
@@ -97,64 +93,23 @@ export const loginSchema: FastifySchema = {
   }
 };
 
-export const passwordResetSchema: FastifySchema = {
+// Password reset and change functionality is handled by Supabase
+// These schemas are kept for reference but not used in our API
+
+export const createUserSchema: FastifySchema = {
   body: {
     type: 'object',
-    required: ['email'],
+    required: ['email', 'name'],
     properties: {
       email: {
         type: 'string',
-        format: 'email'
-      }
-    }
-  },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' }
-      }
-    }
-  }
-};
-
-export const passwordResetConfirmSchema: FastifySchema = {
-  body: {
-    type: 'object',
-    required: ['token', 'newPassword'],
-    properties: {
-      token: {
-        type: 'string'
+        format: 'email',
+        minLength: 1
       },
-      newPassword: {
+      name: {
         type: 'string',
-        minLength: 8
-      }
-    }
-  },
-  response: {
-    200: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean' },
-        message: { type: 'string' }
-      }
-    }
-  }
-};
-
-export const changePasswordSchema: FastifySchema = {
-  body: {
-    type: 'object',
-    required: ['currentPassword', 'newPassword'],
-    properties: {
-      currentPassword: {
-        type: 'string'
-      },
-      newPassword: {
-        type: 'string',
-        minLength: 8
+        minLength: 1,
+        maxLength: 100
       }
     }
   },
@@ -176,27 +131,28 @@ export const changePasswordSchema: FastifySchema = {
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' }
           }
-        },
-        message: { type: 'string' }
+        }
       }
     }
   }
 };
 
-export const createUserSchema: FastifySchema = {
+export const updateCurrentUserSchema: FastifySchema = {
   body: {
     type: 'object',
-    required: ['email', 'name'],
     properties: {
-      email: {
-        type: 'string',
-        format: 'email',
-        minLength: 1
-      },
       name: {
         type: 'string',
         minLength: 1,
         maxLength: 100
+      },
+      avatar: {
+        type: 'string'
+      },
+      preferredCurrency: {
+        type: 'string',
+        minLength: 3,
+        maxLength: 3
       }
     }
   },
@@ -250,6 +206,31 @@ export const updateUserSchema: FastifySchema = {
       }
     }
   },
+  response: {
+    200: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        data: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            email: { type: 'string' },
+            name: { type: 'string' },
+            avatar: { type: 'string' },
+            preferredCurrency: { type: 'string' },
+            isDeleted: { type: 'boolean' },
+            deletedAt: { type: 'string', format: 'date-time' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' }
+          }
+        }
+      }
+    }
+  }
+};
+
+export const getCurrentUserSchema: FastifySchema = {
   response: {
     200: {
       type: 'object',

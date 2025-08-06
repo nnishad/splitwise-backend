@@ -1,29 +1,140 @@
 import { FastifyPluginAsync } from 'fastify';
 import { UserService } from '../services/userService';
-import { UpdateUserRequest } from '../types/user';
-import { authenticateToken } from '../middleware/auth';
+import { 
+  CreateUserRequest, 
+  UpdateUserRequest
+} from '../types/user';
+import { authenticateSupabaseToken } from '../middleware/supabaseAuth';
 import {
+  createUserSchema,
   updateUserSchema,
-  getUserSchema,
-  getUsersSchema,
+  updateCurrentUserSchema,
   deleteUserSchema,
+  getUserSchema,
+  getCurrentUserSchema,
+  getUsersSchema,
   blockUserSchema,
   unblockUserSchema,
-  getBlockedUsersSchema,
 } from '../utils/validation';
-
-interface UserParams {
-  id: string;
-}
-
-interface BlockUserParams {
-  userId: string;
-}
 
 const userRoutes: FastifyPluginAsync = async (fastify) => {
   const userService = new UserService(fastify.prisma);
 
-  // Get all users (authenticated)
+  // Get current user profile
+  fastify.get(
+    '/users/me',
+    {
+      schema: {
+        ...getCurrentUserSchema,
+        tags: ['users']
+      },
+      preHandler: authenticateSupabaseToken,
+    },
+    async (request, reply) => {
+      try {
+        const result = await userService.getUserById(request.user?.id!);
+        
+        if (!result.success) {
+          return reply.status(404).send(result);
+        }
+        
+        return reply.send(result);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    }
+  );
+
+  // Update current user profile
+  fastify.put(
+    '/users/me',
+    {
+      schema: {
+        ...updateCurrentUserSchema,
+        tags: ['users']
+      },
+      preHandler: authenticateSupabaseToken,
+    },
+    async (request, reply) => {
+      try {
+        const userData = request.body as UpdateUserRequest;
+        const result = await userService.updateUser(request.user?.id!, userData);
+        
+        if (!result.success) {
+          return reply.status(400).send(result);
+        }
+        
+        return reply.send(result);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    }
+  );
+
+  // Delete current user account
+  fastify.delete(
+    '/users/me',
+    {
+      schema: {
+        ...deleteUserSchema,
+        tags: ['users']
+      },
+      preHandler: authenticateSupabaseToken,
+    },
+    async (request, reply) => {
+      try {
+        const result = await userService.deleteUser(request.user?.id!);
+        
+        return reply.send(result);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    }
+  );
+
+  // Get user by ID (for group members, etc.)
+  fastify.get(
+    '/users/:userId',
+    {
+      schema: {
+        ...getUserSchema,
+        tags: ['users']
+      },
+      preHandler: authenticateSupabaseToken,
+    },
+    async (request, reply) => {
+      try {
+        const { userId } = request.params as { userId: string };
+        const result = await userService.getUserById(userId);
+        
+        if (!result.success) {
+          return reply.status(404).send(result);
+        }
+        
+        return reply.send(result);
+      } catch (error) {
+        fastify.log.error(error);
+        return reply.status(500).send({
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    }
+  );
+
+  // List users (for admin purposes)
   fastify.get(
     '/users',
     {
@@ -31,40 +142,11 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
         ...getUsersSchema,
         tags: ['users']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const result = await userService.getAllUsers();
-        return reply.send(result);
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          message: 'Internal server error',
-        });
-      }
-    }
-  );
-
-  // Get user by ID (authenticated)
-  fastify.get(
-    '/users/:id',
-    {
-      schema: {
-        ...getUserSchema,
-        tags: ['users']
-      },
-      preHandler: authenticateToken,
-    },
-    async (request, reply) => {
-      try {
-        const { id } = request.params as UserParams;
-        const result = await userService.getUserById(id);
-        
-        if (!result.success) {
-          return reply.status(404).send(result);
-        }
         
         return reply.send(result);
       } catch (error) {
@@ -77,86 +159,7 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // Update user profile (authenticated)
-  fastify.put(
-    '/users/:id',
-    {
-      schema: {
-        ...updateUserSchema,
-        tags: ['users']
-      },
-      preHandler: authenticateToken,
-    },
-    async (request, reply) => {
-      try {
-        const { id } = request.params as UserParams;
-        
-        // Users can only update their own profile
-        if (id !== request.user?.userId) {
-          return reply.status(403).send({
-            success: false,
-            message: 'You can only update your own profile',
-          });
-        }
-        
-        const userData = request.body as UpdateUserRequest;
-        const result = await userService.updateUser(id, userData);
-        
-        if (!result.success) {
-          return reply.status(404).send(result);
-        }
-        
-        return reply.send(result);
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          message: 'Internal server error',
-        });
-      }
-    }
-  );
-
-  // Delete user account (authenticated)
-  fastify.delete(
-    '/users/:id',
-    {
-      schema: {
-        ...deleteUserSchema,
-        tags: ['users']
-      },
-      preHandler: authenticateToken,
-    },
-    async (request, reply) => {
-      try {
-        const { id } = request.params as UserParams;
-        
-        // Users can only delete their own account
-        if (id !== request.user?.userId) {
-          return reply.status(403).send({
-            success: false,
-            message: 'You can only delete your own account',
-          });
-        }
-        
-        const result = await userService.deleteUser(id);
-        
-        if (!result.success) {
-          return reply.status(404).send(result);
-        }
-        
-        return reply.send(result);
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          message: 'Internal server error',
-        });
-      }
-    }
-  );
-
-  // Block user
+  // Block a user
   fastify.post(
     '/users/:userId/block',
     {
@@ -164,12 +167,12 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
         ...blockUserSchema,
         tags: ['users']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
-        const { userId } = request.params as BlockUserParams;
-        const result = await userService.blockUser(request.user?.userId!, userId);
+        const { userId } = request.params as { userId: string };
+        const result = await userService.blockUser(request.user?.id!, userId);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -186,7 +189,7 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // Unblock user
+  // Unblock a user
   fastify.delete(
     '/users/:userId/block',
     {
@@ -194,41 +197,16 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
         ...unblockUserSchema,
         tags: ['users']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
-        const { userId } = request.params as BlockUserParams;
-        const result = await userService.unblockUser(request.user?.userId!, userId);
+        const { userId } = request.params as { userId: string };
+        const result = await userService.unblockUser(request.user?.id!, userId);
         
         if (!result.success) {
           return reply.status(400).send(result);
         }
-        
-        return reply.send(result);
-      } catch (error) {
-        fastify.log.error(error);
-        return reply.status(500).send({
-          success: false,
-          message: 'Internal server error',
-        });
-      }
-    }
-  );
-
-  // Get blocked users
-  fastify.get(
-    '/users/blocked',
-    {
-      schema: {
-        ...getBlockedUsersSchema,
-        tags: ['users']
-      },
-      preHandler: authenticateToken,
-    },
-    async (request, reply) => {
-      try {
-        const result = await userService.getBlockedUsers(request.user?.userId!);
         
         return reply.send(result);
       } catch (error) {

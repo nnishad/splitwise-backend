@@ -1,13 +1,19 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { BalanceService } from '../services/balanceService';
 import { SettlementService } from '../services/settlementService';
-import { authenticateToken } from '../middleware/auth';
-import { JWTPayload } from '../utils/auth';
+import { authenticateSupabaseToken } from '../middleware/supabaseAuth';
+
 import { ExchangeRateService } from '../services/exchangeRateService';
 import { SettlementType } from '../types/balance';
 
 interface AuthenticatedRequest extends FastifyRequest {
-  user: JWTPayload;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+    preferredCurrency: string;
+  };
 }
 
 interface GetBalancesRequest {
@@ -111,7 +117,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.get<GetBalancesRequest>(
     '/groups/:groupId/balances',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         params: {
@@ -133,28 +139,29 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
             properties: {
               success: { type: 'boolean' },
               data: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    userId: { type: 'string' },
-                    userName: { type: 'string' },
-                    balances: {
-                      type: 'array',
-                      items: {
-                        type: 'object',
-                        properties: {
-                          currency: { type: 'string' },
-                          amount: { type: 'number' },
-                          displayAmount: { type: 'string' },
-                          convertedAmount: { type: 'number' },
-                          displayConvertedAmount: { type: 'string' }
-                        }
+                type: 'object',
+                properties: {
+                  groupId: { type: 'string' },
+                  groupName: { type: 'string' },
+                  defaultCurrency: { type: 'string' },
+                  balances: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        userId: { type: 'string' },
+                        userName: { type: 'string' },
+                        userAvatar: { type: 'string' },
+                        totalPaid: { type: 'number' },
+                        totalOwed: { type: 'number' },
+                        netBalance: { type: 'number' },
+                        currency: { type: 'string' },
+                        displayAmount: { type: 'string' }
                       }
-                    },
-                    totalBalance: { type: 'number' },
-                    displayCurrency: { type: 'string' }
-                  }
+                    }
+                  },
+                  totalGroupExpense: { type: 'number' },
+                  displayTotalAmount: { type: 'string' }
                 }
               }
             }
@@ -201,7 +208,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.get<GetUserBalanceRequest>(
     '/groups/:groupId/balances/:userId',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -269,7 +276,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.get<GetDebtsRequest>(
     '/groups/:groupId/debts',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -328,7 +335,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.post<CreateSettlementRequest>(
     '/groups/:groupId/settlements',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -389,7 +396,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.get(
     '/groups/:groupId/settlements/:settlementId',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -408,7 +415,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
       try {
       const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
-        const userId = authenticatedRequest.user.userId;
+        const userId = authenticatedRequest.user.id;
 
         // Verify user is a member of the group
         const groupMember = await fastify.prisma.groupMember.findUnique({
@@ -459,7 +466,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.put<UpdateSettlementRequest>(
     '/groups/:groupId/settlements/:settlementId',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -485,7 +492,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
       const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
         const { notes } = request.body as { notes?: string };
-        const userId = authenticatedRequest.user.userId;
+        const userId = authenticatedRequest.user.id;
 
         // Verify user is involved in the settlement
         const settlement = await fastify.prisma.settlement.findUnique({
@@ -537,7 +544,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.delete(
     '/groups/:groupId/settlements/:settlementId',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -556,7 +563,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
       try {
       const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
-        const userId = authenticatedRequest.user.userId;
+        const userId = authenticatedRequest.user.id;
 
         // Verify user is involved in the settlement
         const settlement = await fastify.prisma.settlement.findUnique({
@@ -599,7 +606,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.get<GetSettlementHistoryRequest>(
     '/groups/:groupId/settlements',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -625,7 +632,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
       const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId } = request.params as { groupId: string };
         const { page = 1, limit = 20 } = request.query as { page?: number; limit?: number };
-        const userId = authenticatedRequest.user.userId;
+        const userId = authenticatedRequest.user.id;
 
         // Verify user is a member of the group
         const groupMember = await fastify.prisma.groupMember.findUnique({
@@ -659,7 +666,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/groups/:groupId/settlements/:settlementId/complete',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -678,7 +685,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
       try {
       const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
-        const userId = authenticatedRequest.user.userId;
+        const userId = authenticatedRequest.user.id;
 
         const settlement = await balanceService.completeSettlement(settlementId, userId);
 
@@ -700,7 +707,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/groups/:groupId/settlements/:settlementId/cancel',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -719,7 +726,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
       try {
       const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
-        const userId = authenticatedRequest.user.userId;
+        const userId = authenticatedRequest.user.id;
 
         const settlement = await balanceService.cancelSettlement(settlementId, userId);
 
@@ -741,7 +748,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.get<GetRealTimeBalanceRequest>(
     '/groups/:groupId/real-time-balance',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -765,7 +772,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
       try {
       const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId } = request.params as { groupId: string };
-        const userId = authenticatedRequest.user.userId;
+        const userId = authenticatedRequest.user.id;
 
         const realTimeBalance = await balanceService.getRealTimeBalance(groupId, userId);
 
@@ -787,7 +794,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.post<CreatePartialSettlementRequest>(
     '/groups/:groupId/partial-settlements',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         
@@ -854,7 +861,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
   fastify.get<GetSettlementHistoryDetailRequest>(
     '/settlements/:settlementId/history',
     {
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
       schema: {
         tags: ['balances'],
         

@@ -140,8 +140,7 @@ export class ExpenseService {
           date: data.date ? new Date(data.date) : new Date(),
           location: data.location,
           categoryId: data.categoryId,
-          isArchived: false,
-          isDeleted: false
+          isArchived: false
         }
       });
 
@@ -162,7 +161,7 @@ export class ExpenseService {
           data: data.splits.map(split => ({
             expenseId: createdExpense.id,
             userId: split.userId,
-            amount: new Decimal(split.amount),
+            amount: new Decimal(split.amount || 0),
             percentage: split.percentage !== undefined && split.percentage !== null ? new Decimal(split.percentage as number) : null
           }))
         });
@@ -238,6 +237,68 @@ export class ExpenseService {
     }
 
     return this.formatExpenseResponse(completeExpense);
+  }
+
+  // Get expenses by group
+  async getExpensesByGroup(groupId: string, userId: string): Promise<ExpenseListResponse> {
+    // Validate group membership
+    const groupMember = await this.prisma.groupMember.findUnique({
+      where: { groupId_userId: { groupId, userId } }
+    });
+
+    if (!groupMember) {
+      throw new Error('You are not a member of this group');
+    }
+
+    const expenses = await this.prisma.expense.findMany({
+      where: {
+        groupId,
+        isDeleted: false
+      },
+      include: {
+        group: true,
+        createdBy: true,
+        category: true,
+        splits: {
+          include: {
+            user: {
+              select: { id: true, name: true, avatar: true }
+            }
+          }
+        },
+        payers: {
+          include: {
+            user: {
+              select: { id: true, name: true, avatar: true }
+            }
+          }
+        },
+        tags: {
+          include: {
+            tag: true
+          }
+        },
+        comments: {
+          include: {
+            user: {
+              select: { id: true, name: true, avatar: true }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return {
+      expenses: expenses.map((expense: any) => this.formatExpenseResponse(expense)),
+      pagination: {
+        page: 1,
+        limit: expenses.length,
+        total: expenses.length,
+        totalPages: 1
+      }
+    };
   }
 
   // Get expense by ID with all related data
@@ -376,7 +437,7 @@ export class ExpenseService {
           data: splitData.map(split => ({
             expenseId,
             userId: split.userId,
-            amount: new Decimal(split.amount),
+            amount: new Decimal(split.amount || 0),
             percentage: split.percentage ? new Decimal(split.percentage) : null,
             shares: split.shares || null,
           }))

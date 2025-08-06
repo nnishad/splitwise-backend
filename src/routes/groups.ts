@@ -10,7 +10,7 @@ import {
   TransferOwnershipRequest,
   GroupRole
 } from '../types/group';
-import { authenticateToken } from '../middleware/auth';
+import { authenticateSupabaseToken } from '../middleware/supabaseAuth';
 import {
   createGroupSchema,
   updateGroupSchema,
@@ -56,12 +56,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...createGroupSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const groupData = request.body as CreateGroupRequest;
-        const result = await groupService.createGroup(request.user?.userId!, groupData);
+        const result = await groupService.createGroup(request.user?.id!, groupData);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -86,11 +86,11 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...getGroupsSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
-        const result = await groupService.getUserGroups(request.user?.userId!);
+        const result = await groupService.getUserGroups(request.user?.id!);
         
         return reply.send(result);
       } catch (error) {
@@ -111,12 +111,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...getGroupSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
-        const result = await groupService.getGroupById(groupId, request.user?.userId!);
+        const result = await groupService.getGroupById(groupId, request.user?.id!);
         
         if (!result.success) {
           return reply.status(404).send(result);
@@ -141,13 +141,13 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...updateGroupSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
         const groupData = request.body as UpdateGroupRequest;
-        const result = await groupService.updateGroup(groupId, request.user?.userId!, groupData);
+        const result = await groupService.updateGroup(groupId, request.user?.id!, groupData);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -172,12 +172,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...archiveGroupSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
-        const result = await groupService.archiveGroup(groupId, request.user?.userId!);
+        const result = await groupService.archiveGroup(groupId, request.user?.id!);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -202,13 +202,13 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...transferOwnershipSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
         const transferData = request.body as TransferOwnershipRequest;
-        const result = await groupService.transferOwnership(groupId, request.user?.userId!, transferData);
+        const result = await groupService.transferOwnership(groupId, request.user?.id!, transferData);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -233,12 +233,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...leaveGroupSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
-        const result = await groupService.leaveGroup(groupId, request.user?.userId!);
+        const result = await groupService.leaveGroup(groupId, request.user?.id!);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -263,12 +263,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...getGroupMembersSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
-        const result = await groupService.getGroupMembers(groupId, request.user?.userId!);
+        const result = await groupService.getGroupMembers(groupId, request.user?.id!);
         
         if (!result.success) {
           return reply.status(404).send(result);
@@ -293,13 +293,13 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...addMemberSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
         const { userId, role } = request.body as { userId: string; role?: GroupRole };
-        const result = await groupMemberService.addMember(groupId, request.user?.userId!, userId, role);
+        const result = await groupMemberService.addMember(groupId, request.user?.id!, userId, role);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -324,12 +324,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...removeMemberSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId, userId } = request.params as MemberParams;
-        const result = await groupMemberService.removeMember(groupId, request.user?.userId!, userId);
+        const result = await groupMemberService.removeMember(groupId, request.user?.id!, userId);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -354,13 +354,13 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...changeRoleSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId, userId } = request.params as MemberParams;
         const { role } = request.body as { role: GroupRole };
-        const result = await groupMemberService.changeMemberRole(groupId, request.user?.userId!, userId, role);
+        const result = await groupMemberService.changeMemberRole(groupId, request.user?.id!, userId, role);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -385,13 +385,13 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         tags: ['groups']
       },
       
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     
     },
     async (request, reply) => {
       try {
         const { groupId, userId } = request.params as MemberParams;
-        const result = await groupMemberService.promoteToAdmin(groupId, request.user?.userId!, userId);
+        const result = await groupMemberService.promoteToAdmin(groupId, request.user?.id!, userId);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -416,13 +416,13 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         tags: ['groups']
       },
       
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     
     },
     async (request, reply) => {
       try {
         const { groupId, userId } = request.params as MemberParams;
-        const result = await groupMemberService.demoteToMember(groupId, request.user?.userId!, userId);
+        const result = await groupMemberService.demoteToMember(groupId, request.user?.id!, userId);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -447,13 +447,13 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...createInviteSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
         const inviteData = request.body as CreateInviteRequest;
-        const result = await inviteService.createInvite(groupId, request.user?.userId!, inviteData);
+        const result = await inviteService.createInvite(groupId, request.user?.id!, inviteData);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -478,12 +478,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...getGroupInvitesSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId } = request.params as GroupParams;
-        const result = await inviteService.getGroupInvites(groupId, request.user?.userId!);
+        const result = await inviteService.getGroupInvites(groupId, request.user?.id!);
         
         if (!result.success) {
           return reply.status(404).send(result);
@@ -508,12 +508,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...revokeInviteSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const { groupId, inviteId } = request.params as InviteParams;
-        const result = await inviteService.revokeInvite(groupId, request.user?.userId!, inviteId);
+        const result = await inviteService.revokeInvite(groupId, request.user?.id!, inviteId);
         
         if (!result.success) {
           return reply.status(400).send(result);
@@ -538,12 +538,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
         ...joinGroupSchema,
         tags: ['groups']
       },
-      preHandler: authenticateToken,
+      preHandler: authenticateSupabaseToken,
     },
     async (request, reply) => {
       try {
         const joinData = request.body as JoinGroupRequest;
-        const result = await inviteService.joinGroup(request.user?.userId!, joinData);
+        const result = await inviteService.joinGroup(request.user?.id!, joinData);
         
         if (!result.success) {
           return reply.status(400).send(result);

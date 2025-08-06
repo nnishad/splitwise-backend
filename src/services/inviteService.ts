@@ -7,7 +7,7 @@ import {
   GroupResponse,
   InviteType 
 } from '../types/group';
-import { AuthUtils } from '../utils/auth';
+
 
 export class InviteService {
   private prisma: PrismaClient;
@@ -37,7 +37,8 @@ export class InviteService {
 
       // Validate invite type and value
       if (inviteData.inviteType === InviteType.EMAIL) {
-        if (!AuthUtils.validateEmail(inviteData.inviteValue)) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(inviteData.inviteValue)) {
           return {
             success: false,
             message: 'Invalid email address',
@@ -54,7 +55,8 @@ export class InviteService {
       }
 
       // Generate unique invite code
-      const inviteCode = AuthUtils.generateResetToken();
+      const inviteCode = Math.random().toString(36).substring(2, 15) + 
+                        Math.random().toString(36).substring(2, 15);
 
       // Set expiration (default 7 days)
       const expiresIn = inviteData.expiresIn || 168; // 7 days in hours

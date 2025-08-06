@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ExpenseTemplateService } from '../services/expenseTemplateService';
-import { authenticateToken } from '../middleware/auth';
-import { JWTPayload } from '../utils/auth';
+import { authenticateSupabaseToken } from '../middleware/supabaseAuth';
+
 import { 
   CreateExpenseTemplateRequest, 
   UpdateExpenseTemplateRequest,
@@ -10,7 +10,13 @@ import {
 } from '../types/expense';
 
 interface AuthenticatedRequest extends FastifyRequest {
-  user: JWTPayload;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+    preferredCurrency: string;
+  };
 }
 
 export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
@@ -67,11 +73,11 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
-      const userId = authenticatedRequest.user.userId;
+      const userId = authenticatedRequest.user.id;
       const body = request.body as CreateExpenseTemplateRequest;
       const template = await expenseTemplateService.createTemplate(userId, body);
       return reply.send(template);
@@ -85,11 +91,11 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
     schema: {
       tags: ['expenseTemplates']
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
-      const userId = authenticatedRequest.user.userId;
+      const userId = authenticatedRequest.user.id;
       const { id } = request.params as { id: string };
       const template = await expenseTemplateService.getTemplateById(id, userId);
       return reply.send(template);
@@ -103,11 +109,11 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
     schema: {
       tags: ['expenseTemplates']
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
-      const userId = authenticatedRequest.user.userId;
+      const userId = authenticatedRequest.user.id;
       const { groupId } = request.params as { groupId: string };
       const templates = await expenseTemplateService.getTemplatesByGroup(groupId, userId);
       return reply.send({ templates });
@@ -169,11 +175,11 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
-      const userId = authenticatedRequest.user.userId;
+      const userId = authenticatedRequest.user.id;
       const { id } = request.params as { id: string };
       const body = request.body as UpdateExpenseTemplateRequest;
       const template = await expenseTemplateService.updateTemplate(id, userId, body);
@@ -189,12 +195,12 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
         tags: ['expenseTemplates']
       },
       
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   
     }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
-      const userId = authenticatedRequest.user.userId;
+      const userId = authenticatedRequest.user.id;
       const { id } = request.params as { id: string };
       await expenseTemplateService.deleteTemplate(id, userId);
       return reply.send({ message: 'Template deleted successfully' });
@@ -249,11 +255,11 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
-      const userId = authenticatedRequest.user.userId;
+      const userId = authenticatedRequest.user.id;
       const { id } = request.params as { id: string };
       const body = request.body as any;
       const expense = await expenseTemplateService.createExpenseFromTemplate(id, userId, body);

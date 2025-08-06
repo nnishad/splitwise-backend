@@ -2,8 +2,8 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { AuditService } from '../services/auditService';
 import { AuditExportService } from '../services/auditExportService';
 import { AuditVisualizationService } from '../services/auditVisualizationService';
-import { authenticateToken } from '../middleware/auth';
-import { JWTPayload } from '../utils/auth';
+import { authenticateSupabaseToken } from '../middleware/supabaseAuth';
+
 import {
   getAuditHistorySchema,
   revertExpenseSchema,
@@ -17,7 +17,13 @@ import {
 } from '../types/audit';
 
 interface AuthenticatedRequest extends FastifyRequest {
-  user: JWTPayload;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    avatar?: string;
+    preferredCurrency: string;
+  };
 }
 
 export default async function auditRoutes(fastify: FastifyInstance) {
@@ -31,12 +37,12 @@ export default async function auditRoutes(fastify: FastifyInstance) {
       ...getAuditHistorySchema,
       tags: ['audit']
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const query = request.query as GetAuditHistoryRequest;
-      const result = await auditService.getAuditHistory(query, authenticatedRequest.user.userId);
+      const result = await auditService.getAuditHistory(query, authenticatedRequest.user.id);
       
       reply.send(result);
     } catch (error: any) {
@@ -66,7 +72,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -75,7 +81,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
       
       const result = await auditService.getExpenseVersions(
         { expenseId: id, page, limit },
-        authenticatedRequest.user.userId
+        authenticatedRequest.user.id
       );
       
       reply.send(result);
@@ -106,7 +112,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -115,7 +121,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
       
       const result = await auditService.getAuditHistory(
         { groupId: id, page, limit },
-        authenticatedRequest.user.userId
+        authenticatedRequest.user.id
       );
       
       reply.send(result);
@@ -133,14 +139,14 @@ export default async function auditRoutes(fastify: FastifyInstance) {
       ...revertExpenseSchema,
       tags: ['audit']
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { id, versionId } = request.params as { id: string; versionId: string };
       const { reason } = request.body as RevertExpenseRequest;
       
-      const result = await auditService.revertExpense(id, versionId, authenticatedRequest.user.userId, reason);
+      const result = await auditService.revertExpense(id, versionId, authenticatedRequest.user.id, reason);
       
       reply.send({
         success: true,
@@ -173,7 +179,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -182,7 +188,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
       
       const result = await auditService.getExpenseVersions(
         { expenseId: id, page, limit },
-        authenticatedRequest.user.userId
+        authenticatedRequest.user.id
       );
       
       reply.send(result);
@@ -214,7 +220,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
@@ -231,7 +237,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         limit: query.limit
       };
       
-      const result = await auditService.getAuditHistory(auditRequest, authenticatedRequest.user.userId);
+      const result = await auditService.getAuditHistory(auditRequest, authenticatedRequest.user.id);
       
       reply.send(result);
     } catch (error: any) {
@@ -262,13 +268,13 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         required: ['period']
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const query = request.query as SpendingSummaryRequest;
       
-      const result = await auditVisualizationService.getSpendingSummary(query, authenticatedRequest.user.userId);
+      const result = await auditVisualizationService.getSpendingSummary(query, authenticatedRequest.user.id);
       
       reply.send(result);
     } catch (error: any) {
@@ -309,13 +315,13 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         required: ['chartType', 'breakdownBy']
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const query = request.query as VisualizationRequest;
       
-      const result = await auditVisualizationService.generateVisualization(query, authenticatedRequest.user.userId);
+      const result = await auditVisualizationService.generateVisualization(query, authenticatedRequest.user.id);
       
       reply.send(result);
     } catch (error: any) {
@@ -332,13 +338,13 @@ export default async function auditRoutes(fastify: FastifyInstance) {
       ...exportRequestSchema,
       tags: ['audit']
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const body = request.body as ExportRequest;
       
-      const result = await auditExportService.createExport(authenticatedRequest.user.userId, body);
+      const result = await auditExportService.createExport(authenticatedRequest.user.id, body);
       
       reply.send({
         success: true,
@@ -364,13 +370,13 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         required: ['id']
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
       
-      const result = await auditExportService.getExportStatus(id, authenticatedRequest.user.userId);
+      const result = await auditExportService.getExportStatus(id, authenticatedRequest.user.id);
       
       reply.send({
         success: true,
@@ -396,13 +402,13 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         required: ['id']
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
       
-      const result = await auditService.getAuditStatistics(id, authenticatedRequest.user.userId);
+      const result = await auditService.getAuditStatistics(id, authenticatedRequest.user.id);
       
       reply.send({
         success: true,
@@ -435,7 +441,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       // TODO: Add admin check
@@ -474,7 +480,7 @@ export default async function auditRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateToken
+    preHandler: authenticateSupabaseToken
   }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       // TODO: Add admin check

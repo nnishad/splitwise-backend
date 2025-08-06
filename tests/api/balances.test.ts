@@ -117,7 +117,7 @@ describe('Balance API', () => {
         data: {
           email: 'nonmember@test.com',
           name: 'Non Member',
-          password: 'hashedpassword'
+          
         }
       });
 

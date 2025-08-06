@@ -8,13 +8,13 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
   id              String    @id @default(cuid())
   email           String    @unique
   name            String
-  password        String    // Hashed password
   avatar          String?   // URL to avatar image
   preferredCurrency String  @default("USD")
   isDeleted       Boolean   @default(false)
