@@ -26,6 +26,28 @@ model User {
   sessions        Session[]
   blockedUsers    UserBlock[] @relation("UserBlocks")
   blockedByUsers  UserBlock[] @relation("BlockedByUsers")
+  
+  // Group relations
+  groupMembers    GroupMember[]
+  groupInvites    GroupInvite[] @relation("InvitedBy")
+  ownedGroups     Group[] @relation("GroupOwner")
+
+  // Expense relations
+  createdExpenses Expense[] @relation("ExpenseCreator")
+  expenseSplits   ExpenseSplit[]
+  expensePayers   ExpensePayer[]
+  expenseComments ExpenseComment[]
+  expenseHistory  ExpenseHistory[]
+  expenseTemplates ExpenseTemplate[] @relation("TemplateCreator")
+  
+  // Settlement relations
+  settlementsFrom Settlement[] @relation("SettlementFromUser")
+  settlementsTo   Settlement[] @relation("SettlementToUser")
+  reminderSettings BalanceReminderSettings[]
+
+  // Audit relations
+  auditLogs       AuditLog[]
+  auditExports    AuditExport[]
 
   @@map("users")
 }
@@ -59,4 +81,446 @@ model UserBlock {
 
   @@unique([blockerId, blockedId])
   @@map("user_blocks")
+}
+
+model Group {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  icon            String?   // URL to group icon
+  defaultCurrency String    @default("USD")
+  preferredCurrency String? // Per-group preferred display currency
+  maxMembers      Int?      // Optional limit for anti-abuse
+  isArchived      Boolean   @default(false)
+  archivedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  ownerId         String
+  owner           User     @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members         GroupMember[]
+  invites         GroupInvite[]
+  expenses        Expense[]
+  expenseTemplates ExpenseTemplate[]
+  settlements     Settlement[]
+  reminderSettings BalanceReminderSettings[]
+
+  // Audit relations
+  auditLogs       AuditLog[]
+  auditExports    AuditExport[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  role      GroupRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model GroupInvite {
+  id          String       @id @default(cuid())
+  groupId     String
+  invitedById String       // User who sent the invite
+  inviteType  InviteType   @default(EMAIL)
+  inviteValue String       // Email, phone, or invite code
+  inviteCode  String       @unique // Unique invite code
+  expiresAt   DateTime
+  isUsed      Boolean      @default(false)
+  usedAt      DateTime?
+  usedBy      String?      // User who used the invite
+  createdAt   DateTime     @default(now())
+
+  // Relations
+  group       Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  invitedBy   User         @relation("InvitedBy", fields: [invitedById], references: [id], onDelete: Cascade)
+
+  @@map("group_invites")
+}
+
+// Expense Management Models
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  icon        String?  // URL to category icon
+  color       String?  // Hex color code
+  isDefault   Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  expenses    Expense[]
+  templates   ExpenseTemplate[]
+
+  @@unique([name])
+  @@map("categories")
+}
+
+model Expense {
+  id              String    @id @default(cuid())
+  title           String
+  description     String?
+  amount          Decimal   @db.Decimal(10, 2)
+  currency        String    @default("USD")
+  exchangeRate    Decimal?  @db.Decimal(10, 6) // Exchange rate used for conversion
+  originalCurrency String?  // Original currency if different from group default
+  convertedAmount Decimal?  @db.Decimal(10, 2) // Amount converted to group default currency
+  date            DateTime  @default(now())
+  location        String?
+
+  isArchived      Boolean   @default(false)
+  archivedAt      DateTime?
+  isRecurring     Boolean   @default(false)
+  recurringPattern RecurringPattern?
+  nextRecurringDate DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  groupId         String
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdById     String
+  createdBy       User     @relation("ExpenseCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id])
+  splits          ExpenseSplit[]
+  payers          ExpensePayer[]
+  tags            ExpenseTag[]
+  comments        ExpenseComment[]
+  history         ExpenseHistory[]
+
+  @@map("expenses")
+}
+
+model ExpenseSplit {
+  id                String   @id @default(cuid())
+  expenseId         String
+  userId            String
+  amount            Decimal  @db.Decimal(10, 2)
+  percentage        Decimal? @db.Decimal(5, 2) // For percentage-based splits
+  shares            Int?     // For share-based splits
+  settledAmount     Decimal  @db.Decimal(10, 2) @default(0)
+  lastSettlementDate DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  settlements Settlement[]
+
+  @@unique([expenseId, userId])
+  @@map("expense_splits")
+}
+
+model ExpensePayer {
+  id        String   @id @default(cuid())
+  expenseId String
+  userId    String
+  amount    Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, userId])
+  @@map("expense_payers")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String?  // Hex color code
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  expenses  ExpenseTag[]
+
+  @@map("tags")
+}
+
+model ExpenseTag {
+  id        String   @id @default(cuid())
+  expenseId String
+  tagId     String
+  createdAt DateTime @default(now())
+
+  // Relations
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  tag       Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([expenseId, tagId])
+  @@map("expense_tags")
+}
+
+model ExpenseComment {
+  id        String   @id @default(cuid())
+  expenseId String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  expense   Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("expense_comments")
+}
+
+model ExpenseTemplate {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  amount          Decimal   @db.Decimal(10, 2)
+  groupId         String
+  categoryId      String?
+  splitType       SplitType
+  splits          Json      // Array of split configurations
+  payers          Json      // Array of payer configurations
+  tagNames        Json?     // Array of tag names
+  isRecurring     Boolean   @default(false)
+  recurringPattern RecurringPattern?
+  nextRecurringDate DateTime?
+  createdById     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  group           Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  createdBy       User      @relation("TemplateCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  category        Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("expense_templates")
+}
+
+model ExpenseHistory {
+  id          String           @id @default(cuid())
+  expenseId   String
+  action      ExpenseAction
+  oldData     Json?            // Previous state
+  newData     Json?            // New state
+  userId      String           // Who performed the action
+  createdAt   DateTime         @default(now())
+
+  // Relations
+  expense     Expense          @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("expense_history")
+}
+
+model ExchangeRate {
+  id           String   @id @default(cuid())
+  fromCurrency String   // Source currency code
+  toCurrency   String   // Target currency code
+  rate         Decimal  @db.Decimal(10, 6)
+  fetchedAt    DateTime @default(now())
+  expiresAt    DateTime // When this rate becomes stale
+
+  @@unique([fromCurrency, toCurrency])
+  @@map("exchange_rates")
+}
+
+enum GroupRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum InviteType {
+  EMAIL
+  PHONE
+  LINK
+}
+
+enum RecurringPattern {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+  CUSTOM
+}
+
+enum SplitType {
+  EQUAL
+  PERCENTAGE
+  AMOUNT
+  SHARES
+}
+
+enum ExpenseAction {
+  CREATED
+  UPDATED
+  DELETED
+  ARCHIVED
+  RESTORED
+  SPLIT_CHANGED
+  PAYER_CHANGED
+  CATEGORY_CHANGED
+  TAGS_CHANGED
+}
+
+enum SettlementStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum SettlementType {
+  FULL
+  PARTIAL
+}
+
+enum SettlementAction {
+  CREATED
+  UPDATED
+  COMPLETED
+  CANCELLED
+}
+
+enum ReminderFrequency {
+  OFF
+  DAILY
+  WEEKLY
+}
+
+model Settlement {
+  id              String          @id @default(cuid())
+  groupId         String
+  fromUserId      String
+  toUserId        String
+  amount          Decimal         @db.Decimal(10, 2)
+  currency        String
+  exchangeRate    Decimal?        @db.Decimal(10, 6)
+  originalCurrency String?
+  convertedAmount Decimal?        @db.Decimal(10, 2)
+  notes           String?
+  status          SettlementStatus @default(PENDING)
+  settlementType  SettlementType  @default(FULL)
+  partialAmount   Decimal?        @db.Decimal(10, 2)
+  originalSplitId String?
+  settledAt       DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  group           Group           @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  fromUser        User            @relation("SettlementFromUser", fields: [fromUserId], references: [id], onDelete: Cascade)
+  toUser          User            @relation("SettlementToUser", fields: [toUserId], references: [id], onDelete: Cascade)
+  originalSplit   ExpenseSplit?   @relation(fields: [originalSplitId], references: [id], onDelete: SetNull)
+  history         SettlementHistory[]
+
+  @@map("settlements")
+}
+
+model BalanceReminderSettings {
+  id                String            @id @default(cuid())
+  groupId           String
+  userId            String
+  frequency         ReminderFrequency @default(OFF)
+  lastReminderSent  DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  // Relations
+  group             Group             @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@map("balance_reminder_settings")
+}
+
+model SettlementHistory {
+  id            String           @id @default(cuid())
+  settlementId  String
+  action        SettlementAction
+  amount        Decimal          @db.Decimal(10, 2)
+  currency      String
+  notes         String?
+  createdAt     DateTime         @default(now())
+
+  // Relations
+  settlement    Settlement       @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+
+  @@map("settlement_history")
+}
+
+// Enhanced Audit Trail Models
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  entityType  String      // 'expense', 'settlement', 'group', 'user'
+  entityId    String      // ID of the entity being audited
+  action      String      // 'created', 'updated', 'deleted', 'reverted', 'restored'
+  userId      String      // Who performed the action
+  groupId     String?     // Associated group for filtering
+  oldData     Json?       // Previous state (compressed)
+  newData     Json?       // New state (compressed)
+  metadata    Json?       // Additional context (IP, user agent, etc.)
+  version     Int         // Version number for optimistic locking
+  createdAt   DateTime    @default(now())
+
+  // Relations
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       Group?      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId, createdAt])
+  @@index([userId, groupId, createdAt])
+  @@index([groupId, createdAt])
+  @@map("audit_logs")
+}
+
+model AuditArchive {
+  id            String   @id @default(cuid())
+  originalId    String   // ID of the original audit log
+  entityType    String
+  entityId      String
+  action        String
+  userId        String
+  groupId       String?
+  compressedData Json    // Compressed audit data
+  archivedAt    DateTime @default(now())
+
+  @@index([entityType, entityId, archivedAt])
+  @@index([groupId, archivedAt])
+  @@map("audit_archives")
+}
+
+model AuditExport {
+  id          String   @id @default(cuid())
+  userId      String
+  groupId     String?
+  exportType  String
+  filters     Json?
+  status      String   @default("pending")
+  fileUrl     String?
+  fileSize    Int?
+  expiresAt   DateTime @default(dbgenerated("NOW() + INTERVAL '7 days'"))
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group       Group?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([groupId, createdAt])
+  @@map("audit_exports")
 } 

@@ -5,6 +5,12 @@ import swaggerPlugin from './plugins/swagger';
 import userRoutes from './routes/users';
 import authRoutes from './routes/auth';
 import sessionRoutes from './routes/sessions';
+import groupRoutes from './routes/groups';
+import expenseRoutes from './routes/expenses';
+import expenseTemplateRoutes from './routes/expenseTemplates';
+import exchangeRateRoutes from './routes/exchangeRates';
+import balanceRoutes from './routes/balances';
+import auditRoutes from './routes/audit';
 
 // Load environment variables
 dotenv.config();
@@ -30,6 +36,12 @@ export const build = async () => {
   await server.register(authRoutes, { prefix: '/api/v1' });
   await server.register(userRoutes, { prefix: '/api/v1' });
   await server.register(sessionRoutes, { prefix: '/api/v1' });
+  await server.register(groupRoutes, { prefix: '/api/v1' });
+  await server.register(expenseRoutes, { prefix: '/api/v1' });
+  await server.register(expenseTemplateRoutes, { prefix: '/api/v1' });
+  await server.register(exchangeRateRoutes, { prefix: '/api/v1' });
+  await server.register(balanceRoutes, { prefix: '/api/v1' });
+  await server.register(auditRoutes, { prefix: '/api/v1' });
 
   // Health check endpoint
   server.get('/health', async (request, reply) => {
