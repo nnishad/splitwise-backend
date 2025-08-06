@@ -16,7 +16,15 @@ const swaggerPlugin: FastifyPluginAsync = async (fastify) => {
       consumes: ['application/json'],
       produces: ['application/json'],
       tags: [
-        { name: 'users', description: 'User management endpoints' },
+        { name: 'auth', description: 'Authentication routes' },
+        { name: 'users', description: 'User management routes' },
+        { name: 'sessions', description: 'Session management routes' },
+        { name: 'groups', description: 'Group management routes' },
+        { name: 'expenses', description: 'Expense management routes' },
+        { name: 'expenseTemplates', description: 'Expense template routes' },
+        { name: 'balances', description: 'Balance and settlement routes' },
+        { name: 'exchangeRates', description: 'Exchange rate routes' },
+        { name: 'audit', description: 'Audit and logging routes' },
       ],
     },
   });
@@ -24,8 +32,14 @@ const swaggerPlugin: FastifyPluginAsync = async (fastify) => {
   await fastify.register(swaggerUi, {
     routePrefix: '/documentation',
     uiConfig: {
-      docExpansion: 'full',
+      docExpansion: 'none', // Collapse all sections by default
       deepLinking: false,
+      defaultModelsExpandDepth: -1, // Hide schemas section
+      defaultModelExpandDepth: 1, // Show only first level of model properties
+      displayRequestDuration: true,
+      filter: true, // Enable search/filter functionality
+      showExtensions: true,
+      showCommonExtensions: true,
     },
     uiHooks: {
       onRequest: function (request, reply, next) {

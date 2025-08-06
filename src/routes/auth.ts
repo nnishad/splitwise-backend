@@ -23,7 +23,10 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/register',
     {
-      schema: registerSchema,
+      schema: {
+        ...registerSchema,
+        tags: ['auth']
+      },
     },
     async (request, reply) => {
       try {
@@ -49,7 +52,10 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/login',
     {
-      schema: loginSchema,
+      schema: {
+        ...loginSchema,
+        tags: ['auth']
+      },
     },
     async (request, reply) => {
       try {
@@ -75,7 +81,10 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/password-reset',
     {
-      schema: passwordResetSchema,
+      schema: {
+        ...passwordResetSchema,
+        tags: ['auth']
+      },
     },
     async (request, reply) => {
       try {
@@ -97,7 +106,10 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/password-reset/confirm',
     {
-      schema: passwordResetConfirmSchema,
+      schema: {
+        ...passwordResetConfirmSchema,
+        tags: ['auth']
+      },
     },
     async (request, reply) => {
       try {
@@ -123,7 +135,10 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/change-password',
     {
-      schema: changePasswordSchema,
+      schema: {
+        ...changePasswordSchema,
+        tags: ['auth']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -150,6 +165,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/logout',
     {
+      schema: {
+        tags: ['auth']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -171,6 +189,9 @@ const authRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/auth/logout-all',
     {
+      schema: {
+        tags: ['auth']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {

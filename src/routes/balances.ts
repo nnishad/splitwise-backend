@@ -2,8 +2,13 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { BalanceService } from '../services/balanceService';
 import { SettlementService } from '../services/settlementService';
 import { authenticateToken } from '../middleware/auth';
+import { JWTPayload } from '../utils/auth';
 import { ExchangeRateService } from '../services/exchangeRateService';
 import { SettlementType } from '../types/balance';
+
+interface AuthenticatedRequest extends FastifyRequest {
+  user: JWTPayload;
+}
 
 interface GetBalancesRequest {
   Querystring: {
@@ -108,6 +113,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
         params: {
           type: 'object',
           properties: {
@@ -158,6 +164,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+      const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId } = request.params;
         const { displayCurrency } = request.query;
         const userId = (request.user as any).id;
@@ -196,10 +203,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' },
+            groupId: { type: 'string' 
+      },
             userId: { type: 'string' }
           },
           required: ['groupId', 'userId']
@@ -214,6 +224,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+      const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId, userId: targetUserId } = request.params;
         const { displayCurrency } = request.query;
         const userId = (request.user as any).id;
@@ -260,10 +271,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' }
+            groupId: { type: 'string' 
+      }
           },
           required: ['groupId']
         },
@@ -277,6 +291,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+      const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId } = request.params;
         const { displayCurrency } = request.query;
         const userId = (request.user as any).id;
@@ -315,10 +330,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' }
+            groupId: { type: 'string' 
+      }
           },
           required: ['groupId']
         },
@@ -338,6 +356,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+      const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId } = request.params;
         const settlementData = request.body;
         const userId = (request.user as any).id;
@@ -372,10 +391,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' },
+            groupId: { type: 'string' 
+      },
             settlementId: { type: 'string' }
           },
           required: ['groupId', 'settlementId']
@@ -384,8 +406,9 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { groupId, settlementId } = request.params;
-        const userId = (request.user as any).id;
+      const authenticatedRequest = request as AuthenticatedRequest;
+        const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
+        const userId = authenticatedRequest.user.userId;
 
         // Verify user is a member of the group
         const groupMember = await fastify.prisma.groupMember.findUnique({
@@ -438,10 +461,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' },
+            groupId: { type: 'string' 
+      },
             settlementId: { type: 'string' }
           },
           required: ['groupId', 'settlementId']
@@ -456,9 +482,10 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { groupId, settlementId } = request.params;
-        const { notes } = request.body;
-        const userId = (request.user as any).id;
+      const authenticatedRequest = request as AuthenticatedRequest;
+        const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
+        const { notes } = request.body as { notes?: string };
+        const userId = authenticatedRequest.user.userId;
 
         // Verify user is involved in the settlement
         const settlement = await fastify.prisma.settlement.findUnique({
@@ -512,10 +539,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' },
+            groupId: { type: 'string' 
+      },
             settlementId: { type: 'string' }
           },
           required: ['groupId', 'settlementId']
@@ -524,8 +554,9 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { groupId, settlementId } = request.params;
-        const userId = (request.user as any).id;
+      const authenticatedRequest = request as AuthenticatedRequest;
+        const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
+        const userId = authenticatedRequest.user.userId;
 
         // Verify user is involved in the settlement
         const settlement = await fastify.prisma.settlement.findUnique({
@@ -570,10 +601,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' }
+            groupId: { type: 'string' 
+      }
           },
           required: ['groupId']
         },
@@ -588,9 +622,10 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { groupId } = request.params;
-        const { page = 1, limit = 20 } = request.query;
-        const userId = (request.user as any).id;
+      const authenticatedRequest = request as AuthenticatedRequest;
+        const { groupId } = request.params as { groupId: string };
+        const { page = 1, limit = 20 } = request.query as { page?: number; limit?: number };
+        const userId = authenticatedRequest.user.userId;
 
         // Verify user is a member of the group
         const groupMember = await fastify.prisma.groupMember.findUnique({
@@ -626,10 +661,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' },
+            groupId: { type: 'string' 
+      },
             settlementId: { type: 'string' }
           },
           required: ['groupId', 'settlementId']
@@ -638,8 +676,9 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { groupId, settlementId } = request.params;
-        const userId = (request.user as any).id;
+      const authenticatedRequest = request as AuthenticatedRequest;
+        const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
+        const userId = authenticatedRequest.user.userId;
 
         const settlement = await balanceService.completeSettlement(settlementId, userId);
 
@@ -663,10 +702,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' },
+            groupId: { type: 'string' 
+      },
             settlementId: { type: 'string' }
           },
           required: ['groupId', 'settlementId']
@@ -675,8 +717,9 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { groupId, settlementId } = request.params;
-        const userId = (request.user as any).id;
+      const authenticatedRequest = request as AuthenticatedRequest;
+        const { groupId, settlementId } = request.params as { groupId: string; settlementId: string };
+        const userId = authenticatedRequest.user.userId;
 
         const settlement = await balanceService.cancelSettlement(settlementId, userId);
 
@@ -700,10 +743,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' }
+            groupId: { type: 'string' 
+      }
           },
           required: ['groupId']
         },
@@ -717,8 +763,9 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
-        const { groupId } = request.params;
-        const userId = (request.user as any).id;
+      const authenticatedRequest = request as AuthenticatedRequest;
+        const { groupId } = request.params as { groupId: string };
+        const userId = authenticatedRequest.user.userId;
 
         const realTimeBalance = await balanceService.getRealTimeBalance(groupId, userId);
 
@@ -742,10 +789,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            groupId: { type: 'string' }
+            groupId: { type: 'string' 
+      }
           },
           required: ['groupId']
         },
@@ -767,6 +817,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+      const authenticatedRequest = request as AuthenticatedRequest;
         const { groupId } = request.params;
         const { fromUserId, toUserId, amount, currency, partialAmount, originalSplitId, exchangeRateOverride, notes } = request.body;
         const userId = (request.user as any).id;
@@ -805,10 +856,13 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     {
       preHandler: authenticateToken,
       schema: {
+        tags: ['balances'],
+        
         params: {
           type: 'object',
           properties: {
-            settlementId: { type: 'string' }
+            settlementId: { type: 'string' 
+      }
           },
           required: ['settlementId']
         }
@@ -816,6 +870,7 @@ export default async function balanceRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       try {
+      const authenticatedRequest = request as AuthenticatedRequest;
         const { settlementId } = request.params;
         const userId = (request.user as any).id;
 

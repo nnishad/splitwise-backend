@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ExpenseTemplateService } from '../services/expenseTemplateService';
-import { authenticateUser } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
+import { JWTPayload } from '../utils/auth';
 import { 
   CreateExpenseTemplateRequest, 
   UpdateExpenseTemplateRequest,
@@ -8,12 +9,17 @@ import {
   updateExpenseTemplateSchema
 } from '../types/expense';
 
+interface AuthenticatedRequest extends FastifyRequest {
+  user: JWTPayload;
+}
+
 export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
   const expenseTemplateService = new ExpenseTemplateService(fastify.prisma);
 
   // Create expense template
   fastify.post('/templates', {
     schema: {
+      tags: ['expenseTemplates'],
       body: createExpenseTemplateSchema,
       response: {
         200: {
@@ -61,11 +67,13 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: FastifyRequest<{ Body: CreateExpenseTemplateRequest }>, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const userId = request.user.id;
-      const template = await expenseTemplateService.createTemplate(userId, request.body);
+      const authenticatedRequest = request as AuthenticatedRequest;
+      const userId = authenticatedRequest.user.userId;
+      const body = request.body as CreateExpenseTemplateRequest;
+      const template = await expenseTemplateService.createTemplate(userId, body);
       return reply.send(template);
     } catch (error: any) {
       return reply.status(400).send({ error: error.message });
@@ -74,11 +82,16 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
 
   // Get template by ID
   fastify.get('/templates/:id', {
-    preHandler: authenticateUser
-  }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    schema: {
+      tags: ['expenseTemplates']
+    },
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const userId = request.user.id;
-      const template = await expenseTemplateService.getTemplateById(request.params.id, userId);
+      const authenticatedRequest = request as AuthenticatedRequest;
+      const userId = authenticatedRequest.user.userId;
+      const { id } = request.params as { id: string };
+      const template = await expenseTemplateService.getTemplateById(id, userId);
       return reply.send(template);
     } catch (error: any) {
       return reply.status(404).send({ error: error.message });
@@ -87,11 +100,16 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
 
   // Get all templates for a group
   fastify.get('/groups/:groupId/templates', {
-    preHandler: authenticateUser
-  }, async (request: FastifyRequest<{ Params: { groupId: string } }>, reply: FastifyReply) => {
+    schema: {
+      tags: ['expenseTemplates']
+    },
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const userId = request.user.id;
-      const templates = await expenseTemplateService.getTemplatesByGroup(request.params.groupId, userId);
+      const authenticatedRequest = request as AuthenticatedRequest;
+      const userId = authenticatedRequest.user.userId;
+      const { groupId } = request.params as { groupId: string };
+      const templates = await expenseTemplateService.getTemplatesByGroup(groupId, userId);
       return reply.send({ templates });
     } catch (error: any) {
       return reply.status(400).send({ error: error.message });
@@ -101,12 +119,15 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
   // Update template
   fastify.put('/templates/:id', {
     schema: {
+        tags: ['expenseTemplates'],
+        
       body: updateExpenseTemplateSchema,
       response: {
         200: {
           type: 'object',
           properties: {
-            id: { type: 'string' },
+            id: { type: 'string' 
+      },
             name: { type: 'string' },
             description: { type: 'string' },
             amount: { type: 'number' },
@@ -148,14 +169,14 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: FastifyRequest<{ 
-    Params: { id: string },
-    Body: UpdateExpenseTemplateRequest 
-  }>, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const userId = request.user.id;
-      const template = await expenseTemplateService.updateTemplate(request.params.id, userId, request.body);
+      const authenticatedRequest = request as AuthenticatedRequest;
+      const userId = authenticatedRequest.user.userId;
+      const { id } = request.params as { id: string };
+      const body = request.body as UpdateExpenseTemplateRequest;
+      const template = await expenseTemplateService.updateTemplate(id, userId, body);
       return reply.send(template);
     } catch (error: any) {
       return reply.status(400).send({ error: error.message });
@@ -164,11 +185,18 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
 
   // Delete template
   fastify.delete('/templates/:id', {
-    preHandler: authenticateUser
-  }, async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+      schema: {
+        tags: ['expenseTemplates']
+      },
+      
+    preHandler: authenticateToken
+  
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const userId = request.user.id;
-      await expenseTemplateService.deleteTemplate(request.params.id, userId);
+      const authenticatedRequest = request as AuthenticatedRequest;
+      const userId = authenticatedRequest.user.userId;
+      const { id } = request.params as { id: string };
+      await expenseTemplateService.deleteTemplate(id, userId);
       return reply.send({ message: 'Template deleted successfully' });
     } catch (error: any) {
       return reply.status(400).send({ error: error.message });
@@ -178,10 +206,13 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
   // Create expense from template
   fastify.post('/templates/:id/create-expense', {
     schema: {
+        tags: ['expenseTemplates'],
+        
       body: {
         type: 'object',
         properties: {
-          name: { type: 'string' },
+          name: { type: 'string' 
+      },
           description: { type: 'string' },
           amount: { type: 'number' },
           categoryId: { type: 'string' },
@@ -218,14 +249,14 @@ export default async function expenseTemplateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: FastifyRequest<{ 
-    Params: { id: string },
-    Body: any 
-  }>, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-      const userId = request.user.id;
-      const expense = await expenseTemplateService.createExpenseFromTemplate(request.params.id, userId, request.body);
+      const authenticatedRequest = request as AuthenticatedRequest;
+      const userId = authenticatedRequest.user.userId;
+      const { id } = request.params as { id: string };
+      const body = request.body as any;
+      const expense = await expenseTemplateService.createExpenseFromTemplate(id, userId, body);
       return reply.send(expense);
     } catch (error: any) {
       return reply.status(400).send({ error: error.message });

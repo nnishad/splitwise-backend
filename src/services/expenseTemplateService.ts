@@ -240,7 +240,7 @@ export class ExpenseTemplateService {
     const { ExpenseService } = await import('./expenseService');
     const expenseService = new ExpenseService(this.prisma);
     
-    return await expenseService.createExpense(userId, expenseData);
+    return await expenseService.createExpense(template.groupId, userId, expenseData);
   }
 
   // Private helper methods

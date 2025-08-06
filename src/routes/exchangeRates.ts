@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ExchangeRateService } from '../services/exchangeRateService';
-import { authenticateUser } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
+import { JWTPayload } from '../utils/auth';
 import { 
   exchangeRateSchema,
   ExchangeRateRequest,
@@ -9,11 +10,7 @@ import {
 } from '../types/expense';
 
 interface AuthenticatedRequest extends FastifyRequest {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
+  user: JWTPayload;
 }
 
 export default async function exchangeRateRoutes(fastify: FastifyInstance) {
@@ -22,12 +19,15 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
   // Get exchange rate between two currencies
   fastify.get('/exchange-rates', {
     schema: {
+        tags: ['exchangeRates'],
+        
       querystring: exchangeRateSchema,
       response: {
         200: {
           type: 'object',
           properties: {
-            success: { type: 'boolean' },
+            success: { type: 'boolean' 
+      },
             data: {
               type: 'object',
               properties: {
@@ -42,9 +42,10 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { fromCurrency, toCurrency, forceRefresh } = request.query as ExchangeRateRequest;
       
       // Validate currencies
@@ -85,11 +86,14 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
   // Get supported currencies
   fastify.get('/currencies', {
     schema: {
+        tags: ['exchangeRates'],
+        
       response: {
         200: {
           type: 'object',
           properties: {
-            success: { type: 'boolean' },
+            success: { type: 'boolean' 
+      },
             data: {
               type: 'array',
               items: {
@@ -106,9 +110,10 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const currencies = exchangeRateService.getSupportedCurrencies();
       
       reply.send({
@@ -126,11 +131,14 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
   // Convert amount between currencies
   fastify.post('/convert', {
     schema: {
+        tags: ['exchangeRates'],
+        
       body: {
         type: 'object',
         required: ['amount', 'fromCurrency', 'toCurrency'],
         properties: {
-          amount: { type: 'number', minimum: 0.01 },
+          amount: { type: 'number', minimum: 0.01 
+      },
           fromCurrency: { type: 'string', minLength: 3, maxLength: 3 },
           toCurrency: { type: 'string', minLength: 3, maxLength: 3 }
         }
@@ -156,9 +164,10 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { amount, fromCurrency, toCurrency } = request.body as {
         amount: number;
         fromCurrency: string;
@@ -205,10 +214,13 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
   // Override exchange rate for an expense (admin/owner only)
   fastify.post('/expenses/:id/exchange-rate-override', {
     schema: {
+        tags: ['exchangeRates'],
+        
       params: {
         type: 'object',
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string' 
+      }
         },
         required: ['id']
       },
@@ -229,9 +241,10 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
       const { exchangeRate } = request.body as { exchangeRate: number };
 
@@ -256,7 +269,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
 
       // Check if user is group owner or admin
       const userMembership = expense.group.members.find(
-        member => member.userId === request.user.id
+        member => member.userId === authenticatedRequest.user.userId
       );
 
       if (!userMembership || (userMembership.role !== 'OWNER' && userMembership.role !== 'ADMIN')) {
@@ -282,7 +295,7 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
         data: {
           expenseId: id,
           action: 'EXCHANGE_RATE_OVERRIDE',
-          userId: request.user.id,
+          userId: authenticatedRequest.user.userId,
           oldData: { exchangeRate: expense.exchangeRate },
           newData: { exchangeRate }
         }
@@ -303,20 +316,24 @@ export default async function exchangeRateRoutes(fastify: FastifyInstance) {
   // Clear expired exchange rates (admin endpoint)
   fastify.post('/exchange-rates/clear-expired', {
     schema: {
+        tags: ['exchangeRates'],
+        
       response: {
         200: {
           type: 'object',
           properties: {
-            success: { type: 'boolean' },
+            success: { type: 'boolean' 
+      },
             message: { type: 'string' },
             clearedCount: { type: 'number' }
           }
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const clearedCount = await exchangeRateService.clearExpiredRates();
       
       reply.send({

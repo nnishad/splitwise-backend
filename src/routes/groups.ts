@@ -52,7 +52,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups',
     {
-      schema: createGroupSchema,
+      schema: {
+        ...createGroupSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -79,7 +82,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/groups',
     {
-      schema: getGroupsSchema,
+      schema: {
+        ...getGroupsSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -101,7 +107,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/groups/:groupId',
     {
-      schema: getGroupSchema,
+      schema: {
+        ...getGroupSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -128,7 +137,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put(
     '/groups/:groupId',
     {
-      schema: updateGroupSchema,
+      schema: {
+        ...updateGroupSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -156,7 +168,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups/:groupId/archive',
     {
-      schema: archiveGroupSchema,
+      schema: {
+        ...archiveGroupSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -183,7 +198,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups/:groupId/transfer-ownership',
     {
-      schema: transferOwnershipSchema,
+      schema: {
+        ...transferOwnershipSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -211,7 +229,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups/:groupId/leave',
     {
-      schema: leaveGroupSchema,
+      schema: {
+        ...leaveGroupSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -238,7 +259,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/groups/:groupId/members',
     {
-      schema: getGroupMembersSchema,
+      schema: {
+        ...getGroupMembersSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -265,7 +289,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups/:groupId/members',
     {
-      schema: addMemberSchema,
+      schema: {
+        ...addMemberSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -293,7 +320,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/groups/:groupId/members/:userId',
     {
-      schema: removeMemberSchema,
+      schema: {
+        ...removeMemberSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -320,7 +350,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put(
     '/groups/:groupId/members/:userId/role',
     {
-      schema: changeRoleSchema,
+      schema: {
+        ...changeRoleSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -348,7 +381,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups/:groupId/members/:userId/promote',
     {
+      schema: {
+        tags: ['groups']
+      },
+      
       preHandler: authenticateToken,
+    
     },
     async (request, reply) => {
       try {
@@ -374,7 +412,12 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups/:groupId/members/:userId/demote',
     {
+      schema: {
+        tags: ['groups']
+      },
+      
       preHandler: authenticateToken,
+    
     },
     async (request, reply) => {
       try {
@@ -400,7 +443,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups/:groupId/invites',
     {
-      schema: createInviteSchema,
+      schema: {
+        ...createInviteSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -428,7 +474,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/groups/:groupId/invites',
     {
-      schema: getGroupInvitesSchema,
+      schema: {
+        ...getGroupInvitesSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -455,7 +504,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/groups/:groupId/invites/:inviteId',
     {
-      schema: revokeInviteSchema,
+      schema: {
+        ...revokeInviteSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -482,7 +534,10 @@ const groupRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/groups/join',
     {
-      schema: joinGroupSchema,
+      schema: {
+        ...joinGroupSchema,
+        tags: ['groups']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {

@@ -27,7 +27,10 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/users',
     {
-      schema: getUsersSchema,
+      schema: {
+        ...getUsersSchema,
+        tags: ['users']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -48,7 +51,10 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/users/:id',
     {
-      schema: getUserSchema,
+      schema: {
+        ...getUserSchema,
+        tags: ['users']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -75,7 +81,10 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.put(
     '/users/:id',
     {
-      schema: updateUserSchema,
+      schema: {
+        ...updateUserSchema,
+        tags: ['users']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -112,7 +121,10 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/users/:id',
     {
-      schema: deleteUserSchema,
+      schema: {
+        ...deleteUserSchema,
+        tags: ['users']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -148,7 +160,10 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.post(
     '/users/:userId/block',
     {
-      schema: blockUserSchema,
+      schema: {
+        ...blockUserSchema,
+        tags: ['users']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -175,7 +190,10 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/users/:userId/block',
     {
-      schema: unblockUserSchema,
+      schema: {
+        ...unblockUserSchema,
+        tags: ['users']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -202,7 +220,10 @@ const userRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/users/blocked',
     {
-      schema: getBlockedUsersSchema,
+      schema: {
+        ...getBlockedUsersSchema,
+        tags: ['users']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {

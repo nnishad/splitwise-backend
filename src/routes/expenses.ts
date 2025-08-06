@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { ExpenseService } from '../services/expenseService';
-import { authenticateUser } from '../middleware/auth';
+import { authenticateToken } from '../middleware/auth';
+import { JWTPayload } from '../utils/auth';
 import { 
   createExpenseSchema, 
   updateExpenseSchema, 
@@ -13,11 +14,7 @@ import {
 } from '../types/expense';
 
 interface AuthenticatedRequest extends FastifyRequest {
-  user: {
-    id: string;
-    email: string;
-    name: string;
-  };
+  user: JWTPayload;
 }
 
 export default async function expenseRoutes(fastify: FastifyInstance) {
@@ -26,6 +23,7 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Create a new expense
   fastify.post('/expenses', {
     schema: {
+      tags: ['expenses'],
       body: createExpenseSchema,
       response: {
         201: {
@@ -60,11 +58,12 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const data = request.body as CreateExpenseRequest;
-      const expense = await expenseService.createExpense(request.user.id, data);
+      const expense = await expenseService.createExpense(data.groupId, authenticatedRequest.user.userId, data);
       
       reply.code(201).send({
         success: true,
@@ -81,6 +80,7 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Get expense by ID
   fastify.get('/expenses/:id', {
     schema: {
+      tags: ['expenses'],
       params: {
         type: 'object',
         properties: {
@@ -89,11 +89,12 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
         required: ['id']
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
-      const expense = await expenseService.getExpenseById(id, request.user.id);
+      const expense = await expenseService.getExpenseById(id, authenticatedRequest.user.userId);
       
       reply.send({
         success: true,
@@ -110,21 +111,25 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Update expense
   fastify.put('/expenses/:id', {
     schema: {
+        tags: ['expenses'],
+        
       params: {
         type: 'object',
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string' 
+      }
         },
         required: ['id']
       },
       body: updateExpenseSchema
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
       const data = request.body as UpdateExpenseRequest;
-      const expense = await expenseService.updateExpense(id, request.user.id, data);
+      const expense = await expenseService.updateExpense(id, authenticatedRequest.user.userId, data);
       
       reply.send({
         success: true,
@@ -141,19 +146,23 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Delete expense (archive)
   fastify.delete('/expenses/:id', {
     schema: {
+        tags: ['expenses'],
+        
       params: {
         type: 'object',
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string' 
+      }
         },
         required: ['id']
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
-      await expenseService.deleteExpense(id, request.user.id);
+      await expenseService.deleteExpense(id, authenticatedRequest.user.userId);
       
       reply.send({
         success: true,
@@ -170,19 +179,23 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Restore archived expense
   fastify.post('/expenses/:id/restore', {
     schema: {
+        tags: ['expenses'],
+        
       params: {
         type: 'object',
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string' 
+      }
         },
         required: ['id']
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
-      const expense = await expenseService.restoreExpense(id, request.user.id);
+      const expense = await expenseService.restoreExpense(id, authenticatedRequest.user.userId);
       
       reply.send({
         success: true,
@@ -199,13 +212,17 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Search and filter expenses
   fastify.get('/expenses', {
     schema: {
+        tags: ['expenses'],
+        
       querystring: searchExpensesSchema
-    },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    
+      },
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const filters = request.query as SearchExpensesRequest;
-      const result = await expenseService.searchExpenses(request.user.id, filters);
+      const result = await expenseService.searchExpenses(authenticatedRequest.user.userId, filters);
       
       reply.send({
         success: true,
@@ -222,13 +239,16 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Bulk update expenses
   fastify.patch('/expenses/bulk', {
     schema: {
+        tags: ['expenses'],
+        
       body: {
         type: 'object',
         required: ['expenseIds', 'updates'],
         properties: {
           expenseIds: {
             type: 'array',
-            items: { type: 'string' },
+            items: { type: 'string' 
+      },
             minItems: 1
           },
           updates: {
@@ -243,11 +263,12 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const data = request.body as BulkUpdateExpenseRequest;
-      await expenseService.bulkUpdateExpenses(request.user.id, data);
+      await expenseService.bulkUpdateExpenses(authenticatedRequest.user.userId, data);
       
       reply.send({
         success: true,
@@ -264,23 +285,27 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Bulk delete expenses
   fastify.delete('/expenses/bulk', {
     schema: {
+        tags: ['expenses'],
+        
       body: {
         type: 'object',
         required: ['expenseIds'],
         properties: {
           expenseIds: {
             type: 'array',
-            items: { type: 'string' },
+            items: { type: 'string' 
+      },
             minItems: 1
           }
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const data = request.body as BulkDeleteExpenseRequest;
-      await expenseService.bulkDeleteExpenses(request.user.id, data);
+      await expenseService.bulkDeleteExpenses(authenticatedRequest.user.userId, data);
       
       reply.send({
         success: true,
@@ -296,9 +321,15 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
 
   // Get categories
   fastify.get('/expenses/categories', {
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+      schema: {
+        tags: ['expenses']
+      },
+      
+    preHandler: authenticateToken
+  
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const categories = await expenseService.getCategories();
       
       reply.send({
@@ -315,9 +346,15 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
 
   // Get tags
   fastify.get('/expenses/tags', {
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+      schema: {
+        tags: ['expenses']
+      },
+      
+    preHandler: authenticateToken
+  
+    }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const tags = await expenseService.getTags();
       
       reply.send({
@@ -335,18 +372,22 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Get expense summary/statistics
   fastify.get('/expenses/summary', {
     schema: {
+        tags: ['expenses'],
+        
       querystring: {
         type: 'object',
         properties: {
-          groupId: { type: 'string' }
+          groupId: { type: 'string' 
+      }
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { groupId } = request.query as { groupId?: string };
-      const summary = await expenseService.getExpenseSummary(request.user.id, groupId);
+      const summary = await expenseService.getExpenseSummary(authenticatedRequest.user.userId, groupId);
       
       reply.send({
         success: true,
@@ -363,19 +404,23 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Get last action for undo functionality
   fastify.get('/expenses/:id/last-action', {
     schema: {
+        tags: ['expenses'],
+        
       params: {
         type: 'object',
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string' 
+      }
         },
         required: ['id']
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
-      const lastAction = await expenseService.getLastAction(id, request.user.id);
+      const lastAction = await expenseService.getLastAction(id, authenticatedRequest.user.userId);
       
       reply.send({
         success: true,
@@ -392,10 +437,13 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Add comment to expense
   fastify.post('/expenses/:id/comments', {
     schema: {
+        tags: ['expenses'],
+        
       params: {
         type: 'object',
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string' 
+      }
         },
         required: ['id']
       },
@@ -407,16 +455,17 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
         }
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
       const { content } = request.body as { content: string };
       
       const comment = await fastify.prisma.expenseComment.create({
         data: {
           expenseId: id,
-          userId: request.user.id,
+          userId: authenticatedRequest.user.userId,
           content
         },
         include: {
@@ -441,17 +490,21 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Get expense comments
   fastify.get('/expenses/:id/comments', {
     schema: {
+        tags: ['expenses'],
+        
       params: {
         type: 'object',
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string' 
+      }
         },
         required: ['id']
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
       
       const comments = await fastify.prisma.expenseComment.findMany({
@@ -479,17 +532,21 @@ export default async function expenseRoutes(fastify: FastifyInstance) {
   // Get expense history
   fastify.get('/expenses/:id/history', {
     schema: {
+        tags: ['expenses'],
+        
       params: {
         type: 'object',
         properties: {
-          id: { type: 'string' }
+          id: { type: 'string' 
+      }
         },
         required: ['id']
       }
     },
-    preHandler: authenticateUser
-  }, async (request: AuthenticatedRequest, reply: FastifyReply) => {
+    preHandler: authenticateToken
+  }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
+      const authenticatedRequest = request as AuthenticatedRequest;
       const { id } = request.params as { id: string };
       
       const history = await fastify.prisma.expenseHistory.findMany({

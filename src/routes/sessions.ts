@@ -13,6 +13,9 @@ const sessionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     '/sessions',
     {
+      schema: {
+        tags: ['sessions']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -34,6 +37,9 @@ const sessionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/sessions/:sessionId',
     {
+      schema: {
+        tags: ['sessions']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
@@ -60,6 +66,9 @@ const sessionRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.delete(
     '/sessions',
     {
+      schema: {
+        tags: ['sessions']
+      },
       preHandler: authenticateToken,
     },
     async (request, reply) => {
